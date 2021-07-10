@@ -3,7 +3,7 @@ import fnmatch
 import os
 import cv2
 import numpy as np
-from face_recognizer import Config
+from lab1 import Config
 
 
 # 定義 walk_files 函式，
@@ -59,7 +59,7 @@ def normalize(X, low, high, dtype=None):
 
 
 # 主程式
-if __name__ == '__main__':
+def train():
     print("讀取訓練影像集 ...")
 
     # 宣告人臉陣列變數 faces

@@ -1,3 +1,8 @@
+import  tkinter as tk
+import  os
+import shutil
+from tkinter import scrolledtext as st
+from tkinter import messagebox as ms
 import serial  # 引用 pySerial 模組
 
 COM_PORT = 'COM3'  # 指定通訊埠名稱

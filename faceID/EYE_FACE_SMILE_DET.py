@@ -2,6 +2,7 @@ import cv2
 
 face_cascade = cv2.CascadeClassifier('./haarcascades/haarcascade_frontalface_alt.xml')
 eye_cascade = cv2.CascadeClassifier('./haarcascades/haarcascade_eye.xml')
+smile_cascade = cv2.CascadeClassifier('./haarcascades/haarcascade_smile.xml')
 
 # 設定 Webcam 位置
 cap = cv2.VideoCapture(0)
@@ -46,6 +47,9 @@ while True:
 
         roi_gray = gray[y:y+h, x:x+w]
         roi_frame = frame[y:y+h, x:x+w]
+        roi_gray2 = gray[y:y + h, x:x + w]
+        roi_frame2 = frame[y:y + h, x:x + w]
+
 
         eyes = eye_cascade.detectMultiScale(
             roi_gray,  # 帶檢測圖像，設定灰階可以加快
@@ -54,9 +58,24 @@ while True:
             minSize = (30, 30),  # 數據搜尋的最小尺寸
             flags = cv2.CASCADE_SCALE_IMAGE
         )
+        eyes_y = 0
+        for (x, y, w , h) in eyes:
+            cv2.rectangle(roi_frame, (x, y), (x+w, y+h), (0,255, 0), 5)
+            eyes_y = y+h
 
-    for (x, y, w , h) in eyes:
-        cv2.rectangle(roi_frame, (x, y), (x+w, y+h), (0,255, 255), 5)
+
+        smile = smile_cascade.detectMultiScale(
+            roi_gray2,  # 帶檢測圖像，設定灰階可以加快
+            scaleFactor=1.1,  # 檢測粒度。若粒度增加會加速檢測速度，但會影響準確率
+            minNeighbors=100,  # 每隔目標至少要檢測到幾次以上，才被認定是真數據
+            minSize=(30, 30),  # 數據搜尋的最小尺寸
+            flags=cv2.CASCADE_SCALE_IMAGE
+        )
+        for (x, y, w , h) in smile:
+            if( y > eyes_y + 10 ):
+                cv2.rectangle(roi_frame2, (x, y), (x+w, y+h), (255,0, 0), 5)
+
+
 
 
 

@@ -27,4 +27,4 @@ except KeyboardInterrupt:
     print("bye!")
 
 except:
-    print('其他錯誤')
+    print('Other Err')

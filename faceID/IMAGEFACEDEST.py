@@ -1,49 +1,43 @@
 import cv2
 
 face_cascade = cv2.CascadeClassifier('./haarcascades/haarcascade_frontalface_alt.xml')
+smile_cascade = cv2.CascadeClassifier('./haarcascades/haarcascade_smile.xml')
 
 # 設定 Webcam 位置
-cap = cv2.VideoCapture(0)
+img = cv2.imread('./image/test.jpg')
 
-# 設定捕捉區域
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1024)  # 800, 640
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 768)  # 600, 480
+# 圖像灰階化
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-while True:
-    # 捕捉 frame-by-frame
-    # ret : 2唔到的 frame 若是正確的會回傳 true
-    # frame : 捕捉到的區域資料
-    ret, frame = cap.read()
+# 畫出每一個臉的範圍
+faces = face_cascade.detectMultiScale(
+    gray,                           #帶檢測圖像，設定灰階可以加快
+    scaleFactor=1.1,                #檢測粒度。若粒度增加會加速檢測速度，但會影響準確率
+    minNeighbors=10,                 #每隔目標至少要檢測到幾次以上，才被認定是真數據
+    minSize=(30, 30),               #數據搜尋的最小尺寸
+    flags=cv2.CASCADE_SCALE_IMAGE
 
-    print(ret, frame)
-    frame = cv2.flip(frame, 1)  #鏡像
-    # 圖像灰階化
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+)
 
-    # 畫出每一個臉的範圍
-    faces = face_cascade.detectMultiScale(
-        gray,                           #帶檢測圖像，設定灰階可以加快
-        scaleFactor=1.1,                #檢測粒度。若粒度增加會加速檢測速度，但會影響準確率
-        minNeighbors=10,                 #每隔目標至少要檢測到幾次以上，才被認定是真數據
-        minSize=(30, 30),               #數據搜尋的最小尺寸
+for (x, y, w, h) in faces:
+    cv2.putText(img, 'WOMAN', (x, y - 10), cv2.FONT_HERSHEY_COMPLEX, 1.2, (0, 255, 0), 2)
+    cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 5)
+    roi_gray = gray[y:y + h, x:x + w]
+    roi_frame = img[y:y + h, x:x + w]
+    smile = smile_cascade.detectMultiScale(
+        roi_gray,  # 帶檢測圖像，設定灰階可以加快
+        scaleFactor=1.1,  # 檢測粒度。若粒度增加會加速檢測速度，但會影響準確率
+        minNeighbors=100,  # 每隔目標至少要檢測到幾次以上，才被認定是真數據
+        minSize=(30, 30),  # 數據搜尋的最小尺寸
         flags=cv2.CASCADE_SCALE_IMAGE
-        # CASCADE_DO_CANNY_PRUNING=1 -> 利用canny邊緣檢測來排除一些邊緣很少或者很多的影象區域
-        # CASCADE_SCALE_IMAGE=2 -> 正常比例檢測
-        # CASCADE_FIND_BIGGEST_OBJECT=4 -> 只檢測最大的物體
-        # CASCADE_DO_ROUGH_SEARCH=8 粗略的檢測
     )
+    for (sx, sy, sw, sh) in smile:
+        cv2.rectangle(roi_frame, (sx, sy), (sx + sw, sy + sh), (0, 255, 0), 5)
+        cv2.putText(roi_frame, 'smile', (sx, sy - 10), cv2.FONT_HERSHEY_COMPLEX, 1.2, (0, 255, 0), 2)
 
-    # 在臉部周圍畫矩形框
-    for (x, y, w , h) in faces:
-        cv2.putText(frame, 'Arnold', (x, y-10), cv2.FONT_HERSHEY_COMPLEX, 1.2, (0,255,0), 2)
-        cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 5)
+print(len(faces), faces)
 
-    # 顯示在 frame UI 上面
-    cv2.imshow('My Video', frame)
-    # 按下 q 離開迴圈
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break;
+cv2.imshow('Face', img)
+c = cv2.waitKey(0)
 
-# 釋放資源
-cap.release()
-cv2.destroyAllWindows()
+

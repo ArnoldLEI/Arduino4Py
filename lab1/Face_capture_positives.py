@@ -2,14 +2,14 @@
 import glob
 import os
 import cv2
-from face_recognizer import Config
+from lab1 import Config
 
 
 # 載入 Config.HAAR_FACES 指定的層疊分類器
 haar_faces = cv2.CascadeClassifier(Config.HAAR_FACES)
 
 # 主程式
-if __name__ == '__main__':
+def capture():
     # 取得攝像鏡頭位置
     camera = cv2.VideoCapture(0)
 
@@ -80,7 +80,7 @@ if __name__ == '__main__':
 
         # 編號加 1
         count += 1
-        if count > 200:
+        if count > Config.SAMPLE_AMOUNT:
             print("finish")
             break;
 

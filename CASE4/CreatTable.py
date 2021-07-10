@@ -1,15 +1,16 @@
 import sqlite3
 
-sql = 'create table if not exists Lotto('\
-      'id INTEGER PRIMARY KEY AUTOINCREMENT, '\
-      'n1 INTEGER, '\
-      'n2 INTEGER, '\
-      'n3 INTEGER, '\
-      'n4 INTEGER, '\
-      'n5 INTEGER, '\
-      'ts timestamp default current_timestamp)'
+sql = '''
+      CREATE TABLE Employee(
+            ID      INT PRIMARY KEY NOT NULL,
+            NAME    VARCHAR(20)     NOT NULL,
+            AGE     INT NOT NULL,
+            ADDRESS VARCHAR(50) ,
+            SALARY  REAL            NOT NULL
+      )
+      '''
 
-conn = sqlite3.connect('demo.db')
+conn = sqlite3.connect('../CASE03/demo.db')
 cursor = conn.cursor()
 cursor.execute(sql)
 

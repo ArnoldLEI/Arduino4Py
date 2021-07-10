@@ -2,8 +2,8 @@ import sqlite3
 
 
 
-sql = 'UPDATE Lotto SET n1=%d, n2=%d WHERE id = %d '\
-      %(30,32,1)
+sql = 'DELETE FROM Lotto WHERE id = %d '\
+      %(1)
 
 print(sql)
 

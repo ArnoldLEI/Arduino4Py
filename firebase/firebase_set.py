@@ -7,13 +7,12 @@ firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://arduinoiot-7a69d-default-rtdb.asia-southeast1.firebasedatabase.app/'
 })
 
-door = db.reference('/door').get()
-temp = db.reference('/dht11/temp').get()
-humi = db.reference('/dht11/humi').get()
-dht11 = db.reference('/dht11').get()
 
+'''db.reference('/dht11').set({
+    'humi':10.1,
+    'temp':20.2
+})'''
 
-def listerer(event):
-    print(event.data)
+db.reference('/dht11/humi').set(30.3)
 
-firebase_admin.db.reference("/door").listen(listerer)
+print('OK')

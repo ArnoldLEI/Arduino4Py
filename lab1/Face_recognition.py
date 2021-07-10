@@ -1,15 +1,15 @@
 # 匯入所需程式庫
 import cv2
-from face_recognizer import Config
+from lab1 import Config
 
 # 載入 Config.HAAR_FACES 指定的層疊分類器
 haar_faces = cv2.CascadeClassifier(Config.HAAR_FACES)
 
-if __name__ == '__main__':
+def recognizer():
 
 
     # 取得攝像鏡頭位置
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
 
     # 設定攝像鏡頭捕捉區域
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
@@ -94,7 +94,7 @@ if __name__ == '__main__':
                 cv2.putText(frame, Config.MY_NAME, (x, y - 7), 2, 1.2, (0, 0, 255), 2)
 
             # 跳出循環偵測回圈
-            # break
+            break
         else:
             # 印出辨識失敗
             print('辨識失敗 face_recognizer!')
@@ -112,3 +112,5 @@ if __name__ == '__main__':
 
     # 關閉所有視窗
     cv2.destroyAllWindows()
+
+    return label[1]
