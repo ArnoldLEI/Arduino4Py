@@ -441,7 +441,14 @@ def cv():
     print("score: ", score)
     if score < 2000:
         sendData('4')
+def faceListsner(event):
+    if (event.data == 1):
+        db.reference("/face").set(0)
+        cv()
 
+def execFaceListsner():
+    # 監聽 firebase face 資料
+    db.reference("/face").listen(faceListsner)
 
 def getOpenWeatherData():
     status_code, main, icon, temp, feels_like, humidity = ow.openweather()
@@ -565,6 +572,10 @@ if __name__ == '__main__':
 
     t3 = threading.Thread(target=ExecInsertData)
     t3.start()
+
+    t4 = threading.Thread(target=execFaceListsner)
+    t4.start()
+
 
 
 
