@@ -10,12 +10,9 @@ from io import BytesIO
 import lab1.Face_recognition as recogn
 import firebase_admin
 from firebase_admin import credentials
-from  firebase_admin import db
+from firebase_admin import db
 import lab1.Face_capture_positives as cap
 import lab1.Face_training as train
-
-
-
 
 cred = credentials.Certificate('../firebase/Key.json')
 firebase_admin.initialize_app(cred, {
@@ -33,6 +30,7 @@ buzeer_off = 32
 door_open = 80
 door_close = 180
 
+
 def createTable():
     sql = 'create table if not exists Env(' \
           'id integer not null primary key autoincrement,' \
@@ -45,14 +43,14 @@ def createTable():
     cursor.execute(sql)
     conn.commit()
 
-def InsertData():
 
+def InsertData():
     sql = '''
             INSERT INTO Env(cds, temp, humi) 
             VALUES (%d,%.1f,%.1f)
-          '''%(int(cdsValue.get().split(" ")[0]),
-               float(tempValue.get().split(" ")[0]),
-               float(humiValue.get().split(" ")[0]))
+          ''' % (int(cdsValue.get().split(" ")[0]),
+                 float(tempValue.get().split(" ")[0]),
+                 float(humiValue.get().split(" ")[0]))
     cursor = conn.cursor()
     cursor.execute(sql)
     print("INERTINTOSUCCES: ", cursor.lastrowid)
@@ -63,6 +61,7 @@ def ExecInsertData():
     while play:
         time.sleep(10)
         InsertData()
+
 
 def receiveData():
     while play:
@@ -85,8 +84,8 @@ def receiveData():
                 tempValue.set("%.1f C" % (float(values[1])))
                 humiValue.set("%.1f %%" % (float(values[2])))
 
-                if(int(values[3]) == 16):
-                    sendButton0.config(image = buzeer_open_photo)
+                if (int(values[3]) == 16):
+                    sendButton0.config(image=buzeer_open_photo)
                     sendButton0.image = buzeer_open_photo
                 elif (int(values[3]) == 32):
                     sendButton0.config(image=buzeer_close_photo)
@@ -101,16 +100,17 @@ def receiveData():
                 pass
 
         except Exception as e:
-            print("Serial closed....",e)
+            print("Serial closed....", e)
             respText.set("Serial closed")
 
-            #重新連線
+            # 重新連線
             try:
                 ser = serial.Serial(COM_PORT, BAUD_RATES)
             except Exception as e:
                 print("Serial closed....", e)
-            #break
+            # break
     conn.close()
+
 
 def postToFirebase(data):
     # ------------------------------------------------
@@ -137,11 +137,13 @@ def postToFirebase(data):
     elif int(logArray[4]) == door_open:
         db.reference('/door').set(1)
 
+
 def sendData(n):
-    data_row = n + "#" # "#" 代表結束符號
+    data_row = n + "#"  # "#" 代表結束符號
     data = data_row.encode()
     ser.write(data)
     print("send: ", data_row, data)
+
 
 def openthedoor():
     door = int(data.split(",")[4])
@@ -150,36 +152,63 @@ def openthedoor():
     elif door == 180:
         sendData('4')
 
+
 def cv():
     score = recogn.recognizer()
     print("score: ", score)
     if score < 2000:
         sendData('4')
+
+
 def faceListsner(event):
     if (event.data == 1):
         db.reference("/face").set(0)
         cv()
-
 def execFaceListsner():
     # 監聽 firebase face 資料
     db.reference("/face").listen(faceListsner)
 
+def doorListsner(event):
+    if event.data == 1 or event.data == 0:
+        openthedoor()
+def execDoorListsner():
+    # 監聽 firebase face 資料
+    db.reference("/face").listen(doorListsner)
+
+def ledListsner(event):
+    if event.data == 1:
+        print(event.data)
+        sendData('1')
+    elif event.data == 2:
+        print(event.data)
+        sendData('2')
+    elif event.data == 3:
+        print(event.data)
+        sendData('3')
+    time.sleep(3)
+
+
+def execLedListsner():
+    # 監聽 firebase led 資料
+    db.reference("/led").listen(ledListsner)
+
+
 def getOpenWeatherData():
     status_code, main, icon, temp, feels_like, humidity = ow.openweather()
-    if(status_code == 200):
+    if (status_code == 200):
         owmainValue.set(main)
 
         raw_data = ow.openweatherIcon(icon)
         im = Image.open(BytesIO(raw_data))
         photo = ImageTk.PhotoImage(im)
         owiconLabel.config(image=photo)
-        owiconLabel.image=photo
+        owiconLabel.image = photo
 
-        owtempValue.set("%.1f C"% float(temp-273.15))
-        owfeelsLikeValue.set("%.1f C"% float(feels_like-273.15))
-        owhumidityValue.set("%.1f %%"% float(humidity))
+        owtempValue.set("%.1f C" % float(temp - 273.15))
+        owfeelsLikeValue.set("%.1f C" % float(feels_like - 273.15))
+        owhumidityValue.set("%.1f %%" % float(humidity))
 
-          # "#" 代表結束符號
+        # "#" 代表結束符號
         sendData("A%.2f,%.2f" % ((float(temp) - 273.15), float(humidity)))
 
     else:
@@ -188,7 +217,7 @@ def getOpenWeatherData():
 
 if __name__ == '__main__':
 
-    #createTable()
+    # createTable()
     try:
         ser = serial.Serial(COM_PORT, BAUD_RATES)
     except Exception as e:
@@ -232,18 +261,18 @@ if __name__ == '__main__':
     owhumidityValue = tkinter.StringVar()
     owhumidityValue.set("")
 
-    sendButton0  = tkinter.Button(text='16', image=buzeer_close_photo, command=lambda: sendData('16'), font=myfont2)
-    sendButton1 = tkinter.Button(text='1', image=red_photo,        command=lambda: sendData('1'), font=myfont2)
-    sendButton2 = tkinter.Button(text='2', image=green_photo,      command=lambda: sendData('2'), font=myfont2)
-    sendButton3 = tkinter.Button(text='3', image=yellow_photo,     command=lambda: sendData('3'), font=myfont2)
+    sendButton0 = tkinter.Button(text='16', image=buzeer_close_photo, command=lambda: sendData('16'), font=myfont2)
+    sendButton1 = tkinter.Button(text='1', image=red_photo, command=lambda: sendData('1'), font=myfont2)
+    sendButton2 = tkinter.Button(text='2', image=green_photo, command=lambda: sendData('2'), font=myfont2)
+    sendButton3 = tkinter.Button(text='3', image=yellow_photo, command=lambda: sendData('3'), font=myfont2)
     sendButton4 = tkinter.Button(text='4', image=door_close_photo, command=lambda: openthedoor(), font=myfont2)
     sendButton5 = tkinter.Button(text='F', image=face_photo, command=lambda: cv(), font=myfont2)
 
     # 爬蟲視窗------------------------------------------------------------
     owmainButton = tkinter.Button(textvariable=owmainValue, command=lambda: getOpenWeatherData(), font=myfont2)
-    owiconLabel = tkinter.Label(root, image = None)
+    owiconLabel = tkinter.Label(root, image=None)
     owtempLabel = tkinter.Label(root, textvariable=owtempValue, font=myfont2, fg='#005100')
-    owfeelsLikeLabel =tkinter.Label(root, textvariable=owfeelsLikeValue, font=myfont2, fg='#005100')
+    owfeelsLikeLabel = tkinter.Label(root, textvariable=owfeelsLikeValue, font=myfont2, fg='#005100')
     owhumidityLabel = tkinter.Label(root, textvariable=owhumidityValue, font=myfont2, fg='#ff0000')
     # 爬蟲視窗------------------------------------------------------------
 
@@ -252,34 +281,33 @@ if __name__ == '__main__':
     tempLabel = tkinter.Label(root, textvariable=tempValue, font=myfont1, fg='#005100')
     humiLabel = tkinter.Label(root, textvariable=humiValue, font=myfont1, fg='#00f')
 
-    root.rowconfigure((0,1,2), weight=1) # 列 0, 列 1 同步放大縮小
-    root.columnconfigure((0,1,2,3,4,5,6), weight=1) # 欄 0, 欄 1, 欄 2 ...同步放大縮小
+    root.rowconfigure((0, 1, 2), weight=1)  # 列 0, 列 1 同步放大縮小
+    root.columnconfigure((0, 1, 2, 3, 4, 5, 6), weight=1)  # 欄 0, 欄 1, 欄 2 ...同步放大縮小
 
-    sendButton0.grid(row=0,   column=0, columnspan=1, sticky='EWNS')
-    sendButton1.grid(row=0,   column=1, columnspan=1, sticky='EWNS')
-    sendButton2.grid(row=0,   column=2, columnspan=1, sticky='EWNS')
-    sendButton3.grid(row=0,   column=3, columnspan=1, sticky='EWNS')
-    sendButton4.grid(row=0,   column=4, columnspan=1, sticky='EWNS')
+    sendButton0.grid(row=0, column=0, columnspan=1, sticky='EWNS')
+    sendButton1.grid(row=0, column=1, columnspan=1, sticky='EWNS')
+    sendButton2.grid(row=0, column=2, columnspan=1, sticky='EWNS')
+    sendButton3.grid(row=0, column=3, columnspan=1, sticky='EWNS')
+    sendButton4.grid(row=0, column=4, columnspan=1, sticky='EWNS')
     sendButton5.grid(row=0, column=5, columnspan=1, sticky='EWNS')
 
-    #爬蟲視窗------------------------------------------------------------
+    # 爬蟲視窗------------------------------------------------------------
     owmainButton.grid(row=1, column=0, columnspan=2, sticky='EWNS')
     owiconLabel.grid(row=1, column=2, columnspan=1, sticky='EWNS')
     owtempLabel.grid(row=1, column=3, columnspan=1, sticky='EWNS')
     owfeelsLikeLabel.grid(row=1, column=4, columnspan=1, sticky='EWNS')
     owhumidityLabel.grid(row=1, column=5, columnspan=1, sticky='EWNS')
 
-    #爬蟲視窗------------------------------------------------------------
+    # 爬蟲視窗------------------------------------------------------------
 
     cdsLabel.grid(row=2, column=0, columnspan=2, sticky='EWNS')
     tempLabel.grid(row=2, column=2, columnspan=2, sticky='EWNS')
     humiLabel.grid(row=2, column=4, columnspan=2, sticky='EWNS')
-    receiveLabel.grid(row=3,  column=0, columnspan=6, sticky='EWNS')
-
-
+    receiveLabel.grid(row=3, column=0, columnspan=6, sticky='EWNS')
 
     t1 = threading.Thread(target=receiveData)
     t1.start()
+
 
     t2 = threading.Thread(target=getOpenWeatherData)
     t2.start()
@@ -290,8 +318,12 @@ if __name__ == '__main__':
     t4 = threading.Thread(target=execFaceListsner)
     t4.start()
 
+    t5 = threading.Thread(target=execLedListsner)
+    t5.start()
 
 
+    t6 = threading.Thread(target=execDoorListsner)
+    t6.start()
 
 
     root.mainloop()
