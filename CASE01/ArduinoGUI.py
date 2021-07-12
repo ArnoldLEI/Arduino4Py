@@ -64,6 +64,7 @@ def ExecInsertData():
 
 
 def receiveData():
+    postflag = 1
     while play:
         try:
             global ser
@@ -73,6 +74,9 @@ def receiveData():
             data = data.strip("\n")
             data = data.strip("\r")  # 除去換行符號
             print(data)
+            if postflag == 1:
+                firstPostToFireBase(data)
+                postflag = 0
 
             threading.Thread(target=lambda: postToFirebase(data)).start()
 
@@ -111,6 +115,14 @@ def receiveData():
             # break
     conn.close()
 
+def firstPostToFireBase(data):
+    logArray = data.split(",")
+    db.reference('/led').set(int(logArray[3]))
+    db.reference('/buzeer').set(0)
+    if int(logArray[4]) == door_close:
+        db.reference('/door').set(0)
+    elif int(logArray[4]) == door_open:
+        db.reference('/door').set(1)
 
 def postToFirebase(data):
     # ------------------------------------------------
@@ -125,24 +137,33 @@ def postToFirebase(data):
     db.reference('/cds').set(int(logArray[0]))
     db.reference('/dht11/temp').set(float(logArray[1]))
     db.reference('/dht11/humi').set(float(logArray[2]))
-    db.reference('/led').set(int(logArray[3]))
+    #db.reference('/led').set(int(logArray[3]))
+
 
     if int(logArray[3]) == buzeer_off:
         db.reference('/buzeer').set(0)
-    elif int(logArray[3]) == buzeer_on:
-        db.reference('/buzeer').set(1)
 
-    if int(logArray[4]) == door_close:
+    '''if int(logArray[4]) == door_close:
         db.reference('/door').set(0)
     elif int(logArray[4]) == door_open:
-        db.reference('/door').set(1)
+        db.reference('/door').set(1)'''
 
 
 def sendData(n):
     data_row = n + "#"  # "#" 代表結束符號
-    data = data_row.encode()
-    ser.write(data)
-    print("send: ", data_row, data)
+    sentdata = data_row.encode()
+    ser.write(sentdata)
+    print("send: ", data_row, sentdata)
+    if n == 1 or n == 2 or n == 3:
+        db.reference("/led").set(n)
+    elif n == 8:
+        db.reference("/door").set(1)
+    elif n == 4:
+        db.reference("/door").set(0)
+    elif n == buzeer_off:
+        db.reference('/buzeer').set(0)
+    elif n == buzeer_on:
+        db.reference('/buzeer').set(1)
 
 
 def openthedoor():
@@ -151,7 +172,6 @@ def openthedoor():
         sendData('8')
     elif door == 180:
         sendData('4')
-
 
 def cv():
     score = recogn.recognizer()
@@ -168,21 +188,34 @@ def execFaceListsner():
     # 監聽 firebase face 資料
     db.reference("/face").listen(faceListsner)
 
+def buzeerListsner(event):
+    if event.data == 1:
+        sendData('16')
+
+def execbuzeerListsner():
+    # 監聽 firebase face 資料
+    db.reference("/buzeer").listen(buzeerListsner)
+
 def doorListsner(event):
-    if event.data == 1 or event.data == 0:
-        openthedoor()
+    if event.data == 1:
+        sendData('4')
+    elif event.data == 0:
+        sendData('8')
 def execDoorListsner():
     # 監聽 firebase face 資料
-    db.reference("/face").listen(doorListsner)
+    db.reference("/door").listen(doorListsner)
 
 def ledListsner(event):
     if event.data == 1:
+        #db.reference("/led").set(1)
         print(event.data)
         sendData('1')
     elif event.data == 2:
+        #db.reference("/led").set(2)
         print(event.data)
         sendData('2')
     elif event.data == 3:
+        #db.reference("/led").set(3)
         print(event.data)
         sendData('3')
     time.sleep(3)
@@ -222,6 +255,8 @@ if __name__ == '__main__':
         ser = serial.Serial(COM_PORT, BAUD_RATES)
     except Exception as e:
         print("Serial exception: ", e)
+
+
 
     root = tkinter.Tk()
     root.geometry("800x600")
@@ -321,8 +356,10 @@ if __name__ == '__main__':
     t5 = threading.Thread(target=execLedListsner)
     t5.start()
 
-
     t6 = threading.Thread(target=execDoorListsner)
+    t6.start()
+
+    t6 = threading.Thread(target=execbuzeerListsner)
     t6.start()
 
 
