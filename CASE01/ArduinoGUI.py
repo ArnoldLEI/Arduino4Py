@@ -176,7 +176,7 @@ def openthedoor():
 def cv():
     score = recogn.recognizer()
     print("score: ", score)
-    if score < 2000:
+    if score < 2500:
         sendData('4')
 
 
